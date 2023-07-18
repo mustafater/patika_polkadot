@@ -1,182 +1,257 @@
-# Substrate Node Template
+# Polkadot
 
-A fresh [Substrate](https://substrate.io/) node, ready for hacking :rocket:
+Implementation of a <https://polkadot.network> node in Rust based on the Substrate framework.
 
-A standalone version of this template is available for each release of Polkadot in the [Substrate Developer Hub Parachain Template](https://github.com/substrate-developer-hub/substrate-parachain-template/) repository.
-The parachain template is generated directly at each Polkadot release branch from the [Node Template in Substrate](https://github.com/paritytech/substrate/tree/master/bin/node-template) upstream
+> **NOTE:** In 2018, we split our implementation of "Polkadot" from its development framework
+> "Substrate". See the [Substrate][substrate-repo] repo for git history prior to 2018.
 
-It is usually best to use the standalone version to start a new project.
-All bugs, suggestions, and feature requests should be made upstream in the [Substrate](https://github.com/paritytech/substrate/tree/master/bin/node-template) repository.
+[substrate-repo]: https://github.com/paritytech/substrate
 
-## Getting Started
+This repo contains runtimes for the Polkadot, Kusama, and Westend networks. The README provides
+information about installing the `polkadot` binary and developing on the codebase. For more
+specific guides, like how to be a validator, see the
+[Polkadot Wiki](https://wiki.polkadot.network/docs/getting-started).
 
-Depending on your operating system and Rust version, there might be additional packages required to compile this template.
-Check the [installation](https://docs.substrate.io/install/) instructions for your platform for the most common dependencies.
-Alternatively, you can use one of the [alternative installation](#alternative-installations) options.
+## Installation
 
-### Build
+If you just wish to run a Polkadot node without compiling it yourself, you may
+either run the latest binary from our
+[releases](https://github.com/paritytech/polkadot/releases) page, or install
+Polkadot from one of our package repositories.
 
-Use the following command to build the node without launching it:
+Installation from the Debian repository will create a `systemd`
+service that can be used to run a Polkadot node. This is disabled by default,
+and can be started by running `systemctl start polkadot` on demand (use
+`systemctl enable polkadot` to make it auto-start after reboot). By default, it
+will run as the `polkadot` user.  Command-line flags passed to the binary can
+be customized by editing `/etc/default/polkadot`. This file will not be
+overwritten on updating polkadot. You may also just run the node directly from
+the command-line.
 
-```sh
+### Debian-based (Debian, Ubuntu)
+
+Currently supports Debian 10 (Buster) and Ubuntu 20.04 (Focal), and
+derivatives. Run the following commands as the `root` user.
+
+```bash
+# Import the security@parity.io GPG key
+gpg --recv-keys --keyserver hkps://keys.mailvelope.com 9D4B2B6EB8F97156D19669A9FF0812D491B96798
+gpg --export 9D4B2B6EB8F97156D19669A9FF0812D491B96798 > /usr/share/keyrings/parity.gpg
+# Add the Parity repository and update the package index
+echo 'deb [signed-by=/usr/share/keyrings/parity.gpg] https://releases.parity.io/deb release main' > /etc/apt/sources.list.d/parity.list
+apt update
+# Install the `parity-keyring` package - This will ensure the GPG key
+# used by APT remains up-to-date
+apt install parity-keyring
+# Install polkadot
+apt install polkadot
+
+```
+
+## Building
+
+### Install via Cargo
+
+Make sure you have the support software installed from the **Build from Source** section
+below this section.
+
+If you want to install Polkadot in your PATH, you can do so with:
+
+```bash
+cargo install --git https://github.com/paritytech/polkadot --tag <version> polkadot --locked
+```
+
+### Build from Source
+
+If you'd like to build from source, first install Rust. You may need to add Cargo's bin directory
+to your PATH environment variable. Restarting your computer will do this for you automatically.
+
+```bash
+curl https://sh.rustup.rs -sSf | sh
+```
+
+If you already have Rust installed, make sure you're using the latest version by running:
+
+```bash
+rustup update
+```
+
+Once done, finish installing the support software:
+
+```bash
+sudo apt install build-essential git clang libclang-dev pkg-config libssl-dev
+```
+
+Build the client by cloning this repository and running the following commands from the root
+directory of the repo:
+
+```bash
+git checkout <latest tagged release>
+./scripts/init.sh
 cargo build --release
 ```
 
-### Embedded Docs
+Note that compilation is a memory intensive process. We recommend having 4 GiB of physical RAM or swap available (keep in mind that if a build hits swap it tends to be very slow).
 
-After you build the project, you can use the following command to explore its parameters and subcommands:
+#### Build from Source with Docker
 
-```sh
-./target/release/node-template -h
+You can also build from source using 
+[Parity CI docker image](https://github.com/paritytech/scripts/tree/master/dockerfiles/ci-linux):
+
+```bash
+git checkout <latest tagged release>
+docker run --rm -it -w /shellhere/polkadot \
+                    -v $(pwd):/shellhere/polkadot \
+                    paritytech/ci-linux:production cargo build --release
+sudo chown -R $(id -u):$(id -g) target/
 ```
 
-You can generate and view the [Rust Docs](https://doc.rust-lang.org/cargo/commands/cargo-doc.html) for this template with this command:
+If you want to reproduce other steps of CI process you can use the following 
+[guide](https://github.com/paritytech/scripts#gitlab-ci-for-building-docker-images).
 
-```sh
-cargo +nightly doc --open
+## Networks
+
+This repo supports runtimes for Polkadot, Kusama, and Westend.
+
+### Connect to Polkadot Mainnet
+
+Connect to the global Polkadot Mainnet network by running:
+
+```bash
+./target/release/polkadot --chain=polkadot
 ```
 
-### Single-Node Development Chain
+You can see your node on [telemetry] (set a custom name with `--name "my custom name"`).
 
-The following command starts a single-node development chain that doesn't persist state:
+[telemetry]: https://telemetry.polkadot.io/#list/Polkadot
 
-```sh
-./target/release/node-template --dev
+### Connect to the "Kusama" Canary Network
+
+Connect to the global Kusama canary network by running:
+
+```bash
+./target/release/polkadot --chain=kusama
 ```
 
-To purge the development chain's state, run the following command:
+You can see your node on [telemetry] (set a custom name with `--name "my custom name"`).
 
-```sh
-./target/release/node-template purge-chain --dev
+[telemetry]: https://telemetry.polkadot.io/#list/Kusama
+
+### Connect to the Westend Testnet
+
+Connect to the global Westend testnet by running:
+
+```bash
+./target/release/polkadot --chain=westend
 ```
 
-To start the development chain with detailed logging, run the following command:
+You can see your node on [telemetry] (set a custom name with `--name "my custom name"`).
 
-```sh
-RUST_BACKTRACE=1 ./target/release/node-template -ldebug --dev
+[telemetry]: https://telemetry.polkadot.io/#list/Westend
+
+### Obtaining DOTs
+
+If you want to do anything on Polkadot, Kusama, or Westend, then you'll need to get an account and
+some DOT, KSM, or WND tokens, respectively. See the
+[claims instructions](https://claims.polkadot.network/) for Polkadot if you have DOTs to claim. For
+Westend's WND tokens, see the faucet
+[instructions](https://wiki.polkadot.network/docs/learn-DOT#getting-westies) on the Wiki.
+
+## Hacking on Polkadot
+
+If you'd actually like to hack on Polkadot, you can grab the source code and build it. Ensure you have
+Rust and the support software installed. This script will install or update Rust and install the
+required dependencies (this may take up to 30 minutes on Mac machines):
+
+```bash
+curl https://getsubstrate.io -sSf | bash -s -- --fast
 ```
 
-Development chains:
+Then, grab the Polkadot source code:
 
-- Maintain state in a `tmp` folder while the node is running.
-- Use the **Alice** and **Bob** accounts as default validator authorities.
-- Use the **Alice** account as the default `sudo` account.
-- Are preconfigured with a genesis state (`/node/src/chain_spec.rs`) that includes several prefunded development accounts.
-
-To persist chain state between runs, specify a base path by running a command similar to the following:
-
-```sh
-// Create a folder to use as the db base path
-$ mkdir my-chain-state
-
-// Use of that folder to store the chain state
-$ ./target/release/node-template --dev --base-path ./my-chain-state/
-
-// Check the folder structure created inside the base path after running the chain
-$ ls ./my-chain-state
-chains
-$ ls ./my-chain-state/chains/
-dev
-$ ls ./my-chain-state/chains/dev
-db keystore network
+```bash
+git clone https://github.com/paritytech/polkadot.git
+cd polkadot
 ```
 
-### Connect with Polkadot-JS Apps Front-End
+Then build the code. You will need to build in release mode (`--release`) to start a network. Only
+use debug mode for development (faster compile times for development and testing).
 
-After you start the node template locally, you can interact with it using the hosted version of the [Polkadot/Substrate Portal](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) front-end by connecting to the local node endpoint.
-A hosted version is also available on [IPFS (redirect) here](https://dotapps.io/) or [IPNS (direct) here](ipns://dotapps.io/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer).
-You can also find the source code and instructions for hosting your own instance on the [polkadot-js/apps](https://github.com/polkadot-js/apps) repository.
+```bash
+./scripts/init.sh   # Install WebAssembly. Update Rust
+cargo build # Builds all native code
+```
 
-### Multi-Node Local Testnet
+You can run the tests if you like:
 
-If you want to see the multi-node consensus algorithm in action, see [Simulate a network](https://docs.substrate.io/tutorials/get-started/simulate-network/).
+```bash
+cargo test --workspace --release
+```
 
-## Template Structure
+You can start a development chain with:
 
-A Substrate project such as this consists of a number of components that are spread across a few directories.
+```bash
+cargo run -- --dev
+```
 
-### Node
+Detailed logs may be shown by running the node with the following environment variables set:
 
-A blockchain node is an application that allows users to participate in a blockchain network.
-Substrate-based blockchain nodes expose a number of capabilities:
+```bash
+RUST_LOG=debug RUST_BACKTRACE=1 cargo run -- --dev
+```
 
-- Networking: Substrate nodes use the [`libp2p`](https://libp2p.io/) networking stack to allow the
-  nodes in the network to communicate with one another.
-- Consensus: Blockchains must have a way to come to [consensus](https://docs.substrate.io/fundamentals/consensus/) on the state of the network.
-  Substrate makes it possible to supply custom consensus engines and also ships with several consensus mechanisms that have been built on top of [Web3 Foundation research](https://research.web3.foundation/en/latest/polkadot/NPoS/index.html).
-- RPC Server: A remote procedure call (RPC) server is used to interact with Substrate nodes.
+### Development
 
-There are several files in the `node` directory.
-Take special note of the following:
+You can run a simple single-node development "network" on your machine by running:
 
-- [`chain_spec.rs`](./node/src/chain_spec.rs): A [chain specification](https://docs.substrate.io/build/chain-spec/) is a source code file that defines a Substrate chain's initial (genesis) state.
-  Chain specifications are useful for development and testing, and critical when architecting the launch of a production chain.
-  Take note of the `development_config` and `testnet_genesis` functions.
-  These functions are used to define the genesis state for the local development chain configuration.
-  These functions identify some [well-known accounts](https://docs.substrate.io/reference/command-line-tools/subkey/) and use them to configure the blockchain's initial state.
-- [`service.rs`](./node/src/service.rs): This file defines the node implementation.
-  Take note of the libraries that this file imports and the names of the functions it invokes.
-  In particular, there are references to consensus-related topics, such as the [block finalization and forks](https://docs.substrate.io/fundamentals/consensus/#finalization-and-forks) and other [consensus mechanisms](https://docs.substrate.io/fundamentals/consensus/#default-consensus-models) such as Aura for block authoring and GRANDPA for finality.
+```bash
+polkadot --dev
+```
 
-### Runtime
+You can muck around by heading to <https://polkadot.js.org/apps> and choose "Local Node" from the
+Settings menu.
 
-In Substrate, the terms "runtime" and "state transition function" are analogous.
-Both terms refer to the core logic of the blockchain that is responsible for validating blocks and executing the state changes they define.
-The Substrate project in this repository uses [FRAME](https://docs.substrate.io/fundamentals/runtime-development/#frame) to construct a blockchain runtime.
-FRAME allows runtime developers to declare domain-specific logic in modules called "pallets".
-At the heart of FRAME is a helpful [macro language](https://docs.substrate.io/reference/frame-macros/) that makes it easy to create pallets and flexibly compose them to create blockchains that can address [a variety of needs](https://substrate.io/ecosystem/projects/).
+### Local Two-node Testnet
 
-Review the [FRAME runtime implementation](./runtime/src/lib.rs) included in this template and note the following:
+If you want to see the multi-node consensus algorithm in action locally, then you can create a
+local testnet. You'll need two terminals open. In one, run:
 
-- This file configures several pallets to include in the runtime.
-  Each pallet configuration is defined by a code block that begins with `impl $PALLET_NAME::Config for Runtime`.
-- The pallets are composed into a single runtime by way of the [`construct_runtime!`](https://crates.parity.io/frame_support/macro.construct_runtime.html) macro, which is part of the core FRAME Support [system](https://docs.substrate.io/reference/frame-pallets/#system-pallets) library.
+```bash
+polkadot --chain=polkadot-local --alice -d /tmp/alice
+```
 
-### Pallets
+And in the other, run:
 
-The runtime in this project is constructed using many FRAME pallets that ship with the [core Substrate repository](https://github.com/paritytech/substrate/tree/master/frame) and a template pallet that is [defined in the `pallets`](./pallets/template/src/lib.rs) directory.
+```bash
+polkadot --chain=polkadot-local --bob -d /tmp/bob --port 30334 --bootnodes '/ip4/127.0.0.1/tcp/30333/p2p/ALICE_BOOTNODE_ID_HERE'
+```
 
-A FRAME pallet is compromised of a number of blockchain primitives:
+Ensure you replace `ALICE_BOOTNODE_ID_HERE` with the node ID from the output of the first terminal.
 
-- Storage: FRAME defines a rich set of powerful [storage abstractions](https://docs.substrate.io/build/runtime-storage/) that makes it easy to use Substrate's efficient key-value database to manage the evolving state of a blockchain.
-- Dispatchables: FRAME pallets define special types of functions that can be invoked (dispatched) from outside of the runtime in order to update its state.
-- Events: Substrate uses [events and errors](https://docs.substrate.io/build/events-and-errors/) to notify users of important changes in the runtime.
-- Errors: When a dispatchable fails, it returns an error.
-- Config: The `Config` configuration interface is used to define the types and parameters upon which a FRAME pallet depends.
+### Monitoring
 
-## Alternative Installations
+[Setup Prometheus and Grafana](https://wiki.polkadot.network/docs/maintain-guides-how-to-monitor-your-node).
 
-Instead of installing dependencies and building this source directly, consider the following alternatives.
+Once you set this up you can take a look at the [Polkadot Grafana dashboards](grafana/README.md) that we currently maintain. 
 
-### CI
+### Using Docker
 
-#### Binary
+[Using Docker](doc/docker.md)
 
-Check the [CI release workflow](./.github/workflows/release.yml) to see how the binary is built on CI.
-You can modify the compilation targets depending on your needs.
+### Shell Completion
 
-Allow GitHub actions in your forked repository to build the binary for you.
+[Shell Completion](doc/shell-completion.md)
 
-Push a tag. For example, `v0.1.1`. Based on [Semantic Versioning](https://semver.org/), the supported tag format is `v?MAJOR.MINOR.PATCH(-PRERELEASE)?(+BUILD_METADATA)?` (the leading "v", pre-release version, and build metadata are optional and the optional prefix is also supported).
+## Contributing
 
-After the pipeline is finished, you can download the binary from the releases page.
+### Contributing Guidelines
 
-#### Container
+[Contribution Guidelines](CONTRIBUTING.md)
 
-Check the [CI release workflow](./.github/workflows/release.yml) to see how the Docker image is built on CI.
+### Contributor Code of Conduct
 
-Add your `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets or other organization settings to your forked repository.
-Change the `DOCKER_REPO` variable in the workflow to `[your DockerHub registry name]/[image name]`.
+[Code of Conduct](CODE_OF_CONDUCT.md)
 
-Push a tag.
+## License
 
-After the image is built and pushed, you can pull it with `docker pull <DOCKER_REPO>:<tag>`.
-
-### Nix
-
-Install [nix](https://nixos.org/), and optionally [direnv](https://github.com/direnv/direnv) and [lorri](https://github.com/nix-community/lorri) for a fully plug-and-play experience for setting up the development environment.
-To get all the correct dependencies, activate direnv `direnv allow` and lorri `lorri shell`.
-
-### Docker
-
-Please follow the [Substrate Docker instructions here](https://github.com/paritytech/substrate/blob/master/docker/README.md) to build the Docker container with the Substrate Node Template binary.
+Polkadot is [GPL 3.0 licensed](LICENSE).

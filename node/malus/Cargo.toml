@@ -28,7 +28,7 @@ assert_matches = "1.5"
 async-trait = "0.1.57"
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
-clap = { version = "4.0.9", features = ["derive"] }
+clap = { version = "4.1.14", features = ["derive"] }
 futures = "0.3.21"
 futures-timer = "3.0.2"
 gum = { package = "tracing-gum", path = "../gum/" }

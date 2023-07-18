@@ -1,12 +1,12 @@
-**/target/
-**/*.rs.bk
-*.swp
-.wasm-binaries
-runtime/wasm/target/
-**/._*
-.idea
+node_modules
 .vscode
-polkadot.*
-!polkadot.service
-.DS_Store
-.env
+**/.DS_Store
+build
+coverage
+# Setting for non zero-installs (https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored)
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
